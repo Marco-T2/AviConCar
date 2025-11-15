@@ -131,13 +131,14 @@ LA PAZ-COCHABAMBA
 </table>
 <br>
 <p style="text-align:center; font-size:18px; margin-top: 0px;color: #113563;"><b>DETALLE</b></p>
-<div>
+<div style="font-size:10px">
     <table>
         <tr>
             <td>
                 <b>CLIENTE: </b>' . $name_persona . '
             </td>
         </tr>
+        <br>
         <tr>
             <td>
                 <b>DESCRIPCION: </b>' . $descripcionC . '
@@ -145,44 +146,172 @@ LA PAZ-COCHABAMBA
         </tr>
     </table>
 </div>
-<table border="1" cellpadding="0" cellspacing="0" align="center">
-    <thead>
-        <tr style="background-color: #f2f2f2;font-size: 14px">
-            <th style="width:35px"><b>Nro</b></th>
-            <th style="width:100px"><b>Tipo</b></th>
-            <th style="width:160px"><b>Descripcion</b></th>
-            <th style="width:65px"><b>NroCajas</b></th>
-            <th style="width:75px; text-align: center;"><b>Peso/Bruto</b></th>
-            <th style="width:75px; text-align: center;"><b>Peso/Neto</b></th>
-            <th style="width:75px"><b>Precio</b></th>
-            <th style="width:75px"><b>SubTotal</b></th>
-        </tr>
-    </thead>
-    <tbody>';
+<table cellpadding="6" cellspacing="0" width="100%" style="margin-top:6px; font-size:10px; border-collapse:collapse;">
+        <thead>
+                <tr style="background-color:#f6f8fb;">
+                        <th style="width:35px; border:0.3px solid #bbb; padding:6px; text-align:center;"><b>Nro</b></th>
+                        <th style="width:100px; border:0.3px solid #bbb; padding:6px; text-align:left;"><b>Tipo</b></th>
+                        <th style="width:160px; border:0.3px solid #bbb; padding:6px; text-align:left;"><b>Descripcion</b></th>
+                        <th style="width:65px; border:0.3px solid #bbb; padding:6px; text-align:center;"><b>NroCajas</b></th>
+                        <th style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;"><b>Peso/Bruto</b></th>
+                        <th style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;"><b>Peso/Neto</b></th>
+                        <th style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;"><b>Precio</b></th>
+                        <th style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;"><b>SubTotal</b></th>
+                </tr>
+        </thead>
+        <tbody>';
 
 // Asumiendo que tienes los datos en $detalletransacciones_datos
 foreach ($detalletransacciones_datos as $index => $detalle) {
+    $total += (float)($detalle['subTotal'] ?? 0);
+    $rowBg = ($index % 2 === 0) ? 'background-color:#ffffff;' : 'background-color:#fbfcfe;';
 
-    $total += $detalle['subTotal'];
-    $html .= '<tr style="font-size: 13px">
-        <td style="width:35px">' . ($index + 1) . '</td>
-        <td style="width:100px">' . htmlspecialchars($detalle['name_tipoProducto'], ENT_QUOTES, 'UTF-8') . '</td>
-        <td style="width:160px">' . htmlspecialchars($detalle['descripcion'], ENT_QUOTES, 'UTF-8') . '</td>
-        <td style="text-align: center;width:65px">' . $detalle['cantidadCajas'] . '</td>
-        <td style="text-align: right;width:75px; padding-right: 10px">' . $detalle['pesoB_kg'] . '&nbsp;&nbsp;</td>
-        <td style="text-align: right;width:75px; padding-right: 10px;">' . $detalle['pesoN_kg'] . '&nbsp;&nbsp;</td>
-        <td style="text-align: right;width:75px; padding-right: 10px;">' . $detalle['precio'] . '&nbsp;&nbsp;</td>
-        <td style="text-align: right;width:75px; padding-right: 10px;">' . $detalle['subTotal'] . '&nbsp;&nbsp;</td>
-    </tr>';
+    $pesoB = number_format((float)($detalle['pesoB_kg'] ?? 0), 2, '.', ',');
+    $pesoN = number_format((float)($detalle['pesoN_kg'] ?? 0), 2, '.', ',');
+    $precio = number_format((float)($detalle['precio'] ?? 0), 2, '.', ',');
+    $subTotal = number_format((float)($detalle['subTotal'] ?? 0), 2, '.', ',');
+
+    $html .= '<tr style="' . $rowBg . '">'
+        . '<td style="width:35px; border:0.3px solid #bbb; padding:6px; text-align:center;">' . ($index + 1) . '</td>'
+        . '<td style="width:100px; border:0.3px solid #bbb; padding:6px;">' . htmlspecialchars($detalle['name_tipoProducto'], ENT_QUOTES, 'UTF-8') . '</td>'
+        . '<td style="width:160px; border:0.3px solid #bbb; padding:6px;">' . htmlspecialchars($detalle['descripcion'], ENT_QUOTES, 'UTF-8') . '</td>'
+        . '<td style="width:65px; border:0.3px solid #bbb; padding:6px; text-align:center;">' . htmlspecialchars((string)($detalle['cantidadCajas'] ?? ''), ENT_QUOTES, 'UTF-8') . '</td>'
+        . '<td style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;">' . $pesoB . '</td>'
+        . '<td style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;">' . $pesoN . '</td>'
+        . '<td style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;">' . $precio . '</td>'
+        . '<td style="width:75px; border:0.3px solid #bbb; padding:6px; text-align:right;">' . $subTotal . '</td>'
+    . '</tr>';
 }
-$html .= '<tr>
-    <td colspan="7" style="text-align: right;background-color: #f2f2f2;"><strong>Total Bs: </strong></td>
-    <td style="text-align: right;"><strong>' . number_format($total, 2, '.', ',') . '</strong>&nbsp;&nbsp;</td>
-</tr>';
+$html .= '<tr>'
+        . '<td colspan="7" style="text-align: right; border:0.3px solid #bbb; padding:6px; background-color:#f6f8fb;"><strong>Total Bs: </strong></td>'
+        . '<td style="text-align: right; border:0.3px solid #bbb; padding:6px;"><strong>' . number_format($total, 2, '.', ',') . '</strong></td>'
+.'</tr>';
 // Cerrar tbody y la tabla
 $html .= '</tbody>
 </table>
 ';
 
 $pdf->writeHTML($html, true, false, true, false, '');
+
+// Título: Registro contable (alineado a la izquierda, mismo tamaño que la tabla)
+$titleHtml = '<p style="text-align:left; font-size:11px; margin-top:8px; margin-bottom:4px;"><b>Registro contable</b></p>';
+$pdf->writeHTML($titleHtml, true, false, true, false, '');
+
+/* ====== Tabla contable (mostrar cómo se registró contablemente) ====== */
+$qd = $pdo->prepare("SELECT
+        s.path AS codigo_contable,
+        s.name_subCuenta AS cuenta,
+        t.debe, t.haber,
+        t.descripcion AS detalle,
+        p.name_persona AS persona
+    FROM tb_transacciones t
+    JOIN tb_subcuentas s ON t.id_subCuenta = s.id_subCuenta
+    LEFT JOIN tb_personas p ON t.id_persona = p.id_persona
+    WHERE t.id_comprobante = :id
+    ORDER BY s.path, s.name_subCuenta
+");
+$qd->execute([':id' => $id_comprobante]);
+$rows = $qd->fetchAll(PDO::FETCH_ASSOC);
+
+$sumDebe = 0.0;
+$sumHaber = 0.0;
+foreach ($rows as $r) {
+        $sumDebe  += (float)($r['debe']  ?? 0);
+        $sumHaber += (float)($r['haber'] ?? 0);
+}
+
+$tbl = <<<'HTML'
+<style>
+    .th { background-color:#f6f8fb; font-weight:bold; }
+    .b  { border:0.3px solid #bbb; }
+    .c  { text-align:center; }
+    .r  { text-align:right; }
+    .p  { padding:6px 4px; }
+    .small{ font-size:10px; }
+    .foot { font-weight:700; }
+</style>
+
+<table cellpadding="6" cellspacing="0" width="100%" style="margin-top:6px; font-size:11px;">
+    <thead>
+        <tr class="th">
+            <td class="b c p" style="width:9%"><b>Código</b></td>
+            <td class="b c p" style="width:20%"><b>Cuenta</b></td>
+            <td class="b c p" style="width:10%"><b>Debe</b></td>
+            <td class="b c p" style="width:12%"><b>Haber</b></td>
+            <td class="b c p" style="width:34%"><b>Descripción</b></td>
+            <td class="b c p" style="width:15%"><b>Persona</b></td>
+        </tr>
+    </thead>
+    <tbody>
+HTML;
+
+if ($rows) {
+    $i = 0;
+    foreach ($rows as $r) {
+        $codigo = htmlspecialchars((string)($r['codigo_contable'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $cuenta = htmlspecialchars((string)($r['cuenta'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $debe   = number_format((float)($r['debe'] ?? 0),  2, '.', ',');
+        $haber  = number_format((float)($r['haber'] ?? 0), 2, '.', ',');
+        $det    = htmlspecialchars((string)($r['detalle'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $pers   = htmlspecialchars((string)($r['persona'] ?? ''), ENT_QUOTES, 'UTF-8');
+
+        $rowStyle = ($i % 2 === 0) ? 'background-color:#ffffff;' : 'background-color:#fbfcfe;';
+
+        $tbl .= "\n        <tr style=\"{$rowStyle}\">\n          <td class=\"b p small\" style=\"width:9%\">{$codigo}</td>\n          <td class=\"b p small\" style=\"width:20%\">{$cuenta}</td>\n          <td class=\"b r p small\" style=\"width:10%\">{$debe}</td>\n          <td class=\"b r p small\" style=\"width:12%\">{$haber}</td>\n          <td class=\"b p small\" style=\"width:34%\">{$det}</td>\n          <td class=\"b p small\" style=\"width:15%\">{$pers}</td>\n        </tr>";
+        $i++;
+    }
+} else {
+    $tbl .= '<tr><td class="b c p" colspan="6">Sin partidas contables</td></tr>';
+}
+
+$tbl .= <<<'HTML'
+    </tbody>
+    <tfoot>
+        <tr class="th">
+            <td class="b p" colspan="2"><b>&nbsp;Totales&nbsp;</b></td>
+            <td class="b r p foot"><b>
+HTML;
+
+$tbl .= number_format($sumDebe, 2, '.', ',');
+
+$tbl .= <<<'HTML'
+</b></td>
+            <td class="b r p foot"><b>
+HTML;
+
+$tbl .= number_format($sumHaber, 2, '.', ',');
+
+$tbl .= <<<'HTML'
+</b></td>
+            <td class="b p" colspan="2">&nbsp;</td>
+        </tr>
+    </tfoot>
+</table>
+HTML;
+
+$pdf->writeHTML($tbl, true, false, true, false, '');
+
+// Dibujar cajas de firma al final de la hoja (mismo estilo que la tabla)
+$pdf->SetY(-60);
+$signHtml = '<table cellpadding="6" cellspacing="0" width="100%" style="font-family:times; font-size:11px;">'
+    . '<tr>'
+    . '<td style="width:33%; text-align:center; padding:4px;">'
+        . '<table cellpadding="0" cellspacing="0" width="100%" style="border:0.3px solid #bbb; height:72px;">'
+            . '<tr><td style="vertical-align:bottom; text-align:center; font-size:10px; padding-bottom:6px;"><b>Elaboró</b></td></tr>'
+        . '</table>'
+    . '</td>'
+    . '<td style="width:33%; text-align:center; padding:4px;">'
+        . '<table cellpadding="0" cellspacing="0" width="100%" style="border:0.3px solid #bbb; height:72px;">'
+            . '<tr><td style="vertical-align:bottom; text-align:center; font-size:10px; padding-bottom:6px;"><b>Revisó</b></td></tr>'
+        . '</table>'
+    . '</td>'
+    . '<td style="width:34%; text-align:center; padding:4px;">'
+        . '<table cellpadding="0" cellspacing="0" width="100%" style="border:0.3px solid #bbb; height:72px;">'
+            . '<tr><td style="vertical-align:bottom; text-align:center; font-size:10px; padding-bottom:6px;"><b>Aprobó</b></td></tr>'
+        . '</table>'
+    . '</td>'
+    . '</tr>'
+    . '</table>';
+$pdf->writeHTML($signHtml, true, false, true, false, '');
+
 $pdf->Output('ND' . $num_comprobante . '.pdf', 'I');
