@@ -34,11 +34,27 @@ $tipopersonas_map = array_column($tipopersonas_datos, 'name_tipoPersona', 'id_ti
 
             <div class="col-md-3 col-sm-6 col-12">
                 <div class="info-box">
-                    <span class="info-box-icon bg-info"><i class="fas fa-dollar-sign"></i></span>
+                    <span class="info-box-icon bg-warning"><i class="fas fa-dollar-sign"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">BANCO BETO</span>
-                        <a href="../contabilidad/mayorsubcuenta.php?id_subcuenta=75" class="ml-3" style="font-weight: bold;">
-                            <?php echo htmlspecialchars(number_format($sumaCajaGeneral_datos['saldo_total'], 2, '.', ',')); ?>
+                        <?php
+                        // Obtener saldo específico para la subcuenta id_subcuenta = 75
+                        try {
+                            $stmtBanco = $pdo->prepare(
+                                "SELECT COALESCE(SUM(COALESCE(t.debe,0) - COALESCE(t.haber,0)),0) AS saldo_total
+                                 FROM tb_transacciones t
+                                 LEFT JOIN tb_comprobantes c ON c.id_comprobante = t.id_comprobante
+                                 WHERE t.id_subcuenta = :id_subcuenta AND c.id_gestion = :g"
+                            );
+                            $stmtBanco->execute([':id_subcuenta' => 75, ':g' => (int)GESTION_ACTIVA]);
+                            $sumaBancoBeto = $stmtBanco->fetch(PDO::FETCH_ASSOC);
+                            $saldoBancoBeto = (float)($sumaBancoBeto['saldo_total'] ?? 0);
+                        } catch (Exception $e) {
+                            $saldoBancoBeto = 0.00;
+                        }
+                        ?>
+                        <a href="../contabilidad/mayorsubcuenta.php?id_subcuenta=75" class="ml-3" style="font-weight: bold; color: #663f00;">
+                            <?php echo htmlspecialchars(number_format($saldoBancoBeto, 2, '.', ',')); ?>
                         </a>
                     </div>
                 </div>
