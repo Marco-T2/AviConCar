@@ -84,34 +84,7 @@ include('../app/controllers/comprobantes/listado_comprobantes.php');
                 </tr>
               </thead>
               <tbody>
-                <?php if (!empty($comprobantes_datos)): ?>
-                  <?php foreach ($comprobantes_datos as $r): ?>
-                    <tr>
-                      <td><?php echo date('d/m/Y', strtotime($r['fecha_comprobante'])); ?></td>
-                      <td><?php echo htmlspecialchars($r['name_tipocomprobante'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                      <td><?php echo (int)($r['num_comprobante'] ?? 0); ?></td>
-                      <td><?php echo htmlspecialchars($r['name_persona'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                      <td><?php echo htmlspecialchars($r['descripcion'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                      <td style="text-align:right;"><?php echo number_format((float)($r['debe'] ?? 0), 2); ?></td>
-                      <td style="text-align:right;"><?php echo number_format((float)($r['haber'] ?? 0), 2); ?></td>
-                      <td>
-                        <center>
-                          <div class="btn-group">
-                            <a href="print.php?id=<?php echo (int)$r['id_comprobante']; ?>" class="btn btn-warning btn-sm" title="Imprimir">
-                              <i class="fas fa-print fa-sm"></i>
-                            </a>
-                            <a href="update.php?id=<?php echo (int)$r['id_comprobante']; ?>" class="btn btn-success btn-sm" title="Editar">
-                              <i class="fa fa-pencil-alt fa-sm"></i>
-                            </a>
-                            <a href="#" onclick="confirmDelete(<?php echo (int)$r['id_comprobante']; ?>);" class="btn btn-danger btn-sm" title="Eliminar">
-                              <i class="fa fa-trash fa-sm"></i>
-                            </a>
-                          </div>
-                        </center>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
+                <!-- Carga por AJAX (server-side) -->
               </tbody>
             </table>
           </div>
@@ -145,6 +118,10 @@ include('../layout/mensajes.php');
 ?>
 
 <script>
+  var baseURL = '<?php echo $URL; ?>';
+</script>
+
+<script>
 $(function () {
   var table = $("#example1").DataTable({
     pageLength: 15,
@@ -168,6 +145,47 @@ $(function () {
       { extend:'collection', text:'Reportes', orientation:'landscape', buttons:['copy','pdf','csv','excel','print'] },
       { extend:'colvis', text:'Filtro de columnas' }
     ],
-  }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-});
+      processing: true,
+      serverSide: true,
+      pageLength: 15,
+      order: [],
+      language: {
+        emptyTable: "No hay información",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ Comprobantes",
+        infoEmpty: "Mostrando 0 a 0 de 0 Comprobantes",
+        infoFiltered: "(Filtrado de _MAX_ total Comprobantes)",
+        lengthMenu: "Mostrar _MENU_ Comprobantes",
+        loadingRecords: "Cargando...",
+        processing: "Procesando...",
+        search: "Buscar en DB:",
+        zeroRecords: "Sin resultados encontrados",
+        paginate: { first:"Primero", last:"Último", next:"Siguiente", previous:"Anterior" }
+      },
+      responsive: true,
+      lengthChange: true,
+      autoWidth: false,
+      ajax: {
+        url: baseURL + '/app/controllers/comprobantes/listado_comprobantes_ajax.php',
+        type: 'POST',
+        data: function(d) {
+          d.desde = '<?php echo htmlspecialchars($desde, ENT_QUOTES, 'UTF-8'); ?>';
+          d.hasta = '<?php echo htmlspecialchars($hasta, ENT_QUOTES, 'UTF-8'); ?>';
+        }
+      },
+      columns: [
+        { data: 'fecha' },
+        { data: 'tipo' },
+        { data: 'nro' },
+        { data: 'cliente' },
+        { data: 'descripcion' },
+        { data: 'debe', className: 'text-right' },
+        { data: 'haber', className: 'text-right' },
+        { data: 'acciones', orderable: false, searchable: false }
+      ],
+      buttons: [
+        { extend:'collection', text:'Reportes', orientation:'landscape', buttons:['copy','pdf','csv','excel','print'] },
+        { extend:'colvis', text:'Filtro de columnas' }
+      ],
+    }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+  });
 </script>
