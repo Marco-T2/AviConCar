@@ -52,6 +52,21 @@ scratch. This page gets rid of all links and provides the needed markup only.
       padding-top: 10px;
       /* Esto es para asegurarse de que el contenido no quede debajo de la navbar */
     }
+    /* Submenu: softer background and lighter icon color for better contrast */
+    .nav-sidebar .nav-treeview .nav-link {
+      background-color: rgba(255,255,255,0.03);
+      color: #e6f3ff;
+      padding-left: 34px;
+      transition: background-color .12s ease, color .12s ease;
+    }
+    .nav-sidebar .nav-treeview .nav-link .nav-icon {
+      color: #9fc5ff;
+      margin-right:8px;
+    }
+    .nav-sidebar .nav-treeview .nav-link:hover {
+      background-color: rgba(255,255,255,0.06);
+      color: #ffffff;
+    }
   </style>
 
 
@@ -106,45 +121,48 @@ scratch. This page gets rid of all links and provides the needed markup only.
               </a>
             </li>
 
-            <!--KADEX -->
+            <!-- KARDEX CLIENTES -->
             <li class="nav-item">
               <a href="<?php echo $URL; ?>/kardex/" class="nav-link">
-                <i class="nav-icon fa fa-bars"></i>
+                <i class="nav-icon fas fa-address-book"></i>
                 <p>
-                  KARDEX
+                  KARDEX CLIENTES
                 </p>
               </a>
             </li>
 
-            <li class="nav-item" hidden>
+            <!-- KARDEX PROVEEDORES (submenu) -->
+            <li class="nav-item has-treeview">
               <a href="#" class="nav-link">
-                <i class="nav-icon fa fa-bars"></i>
+                <i class="nav-icon fas fa-truck"></i>
                 <p>
-                  KARDEX
+                  KARDEX PROVEEDORES
                   <i class="right fas fa-angle-left"></i>
                 </p>
               </a>
               <ul class="nav nav-treeview">
                 <li class="nav-item">
-                  <a href="<?php echo $URL; ?>/kardex/" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Kardex clientes</p>
+                  <a href="<?php echo $URL; ?>/kardex/proveedores.php" class="nav-link">
+                    <i class="nav-icon fas fa-user-friends"></i>
+                    <p>Prov. de pollo Vivo</p>
                   </a>
                 </li>
-              </ul>
-              <ul class="nav nav-treeview">
                 <li class="nav-item">
-                  <a href="<?php echo $URL; ?>/kardex/" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Kardex proveedores</p>
+                  <a href="<?php echo $URL; ?>/kardex/traspasos.php" class="nav-link">
+                    <i class="nav-icon fas fa-exchange-alt"></i>
+                    <p>Traspasos de pollo</p>
                   </a>
                 </li>
-              </ul>
-              <ul class="nav nav-treeview">
                 <li class="nav-item">
-                  <a href="<?php echo $URL; ?>/kardex/" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Fleteros</p>
+                  <a href="<?php echo $URL; ?>/kardex/matadero.php" class="nav-link">
+                    <i class="nav-icon fas fa-industry"></i>
+                    <p>Servicio Matadero</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="<?php echo $URL; ?>/kardex/fletes.php" class="nav-link">
+                    <i class="nav-icon fas fa-shipping-fast"></i>
+                    <p>Servicio Fletes</p>
                   </a>
                 </li>
               </ul>
