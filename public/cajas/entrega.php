@@ -104,6 +104,8 @@ include('../layout/mensajes.php');
   .table-excel .qty { width:44px; text-align:right; }
   .table-excel th.nro-cell, .table-excel td.cell-nro { width:48px; max-width:48px; text-align:center; }
   .btn-sm { padding:4px 6px; font-size:12px; }
+  .icon-btn { width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; }
+  .icon-btn svg { display:block; color:#fff; }
   /* client column fixed, observation flexible */
   .table-excel td.client-cell { width:180px; max-width:180px; }
   .table-excel .cliente-input { width:100%; box-sizing:border-box; }
@@ -197,8 +199,12 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
     });
 
     html += `<td class="obs-cell"><input type="text" class="obs-input" name="obs[]" value="${escapeHtml(data.obs || '')}"></td>`;
-    // delete column: if fixed keep empty placeholder, else add delete button
-    if (fixed) html += `<td></td>`; else html += `<td style="text-align:center"><button type="button" class="btn btn-sm btn-danger delete-row">Eliminar</button></td>`;
+    // delete column: if fixed keep empty placeholder, else add delete button (icon)
+    if (fixed) html += `<td></td>`; else {
+      html += `<td style="text-align:center"><button type="button" class="btn btn-sm btn-danger delete-row icon-btn" title="Eliminar fila" aria-label="Eliminar fila">`;
+      html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6v14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6l1-2h4l1 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      html += `</button></td>`;
+    }
 
     if (fixed) tr.classList.add('fixed-source');
 

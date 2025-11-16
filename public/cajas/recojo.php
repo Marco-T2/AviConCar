@@ -142,6 +142,8 @@ include('../layout/mensajes.php');
   .table-excel tbody td:nth-child(8) input { min-width:220px; }
 
   .btn-sm { padding:4px 6px; font-size:12px; }
+  .icon-btn { width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; }
+  .icon-btn svg { display:block; color:#fff; }
 
 </style>
 
@@ -248,7 +250,9 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
     html += `<td style="text-align:center"><input type="checkbox" name="notad[]" ${data.notad ? 'checked' : ''}></td>`;
     html += `<td style="text-align:center"><input type="checkbox" name="foto[]" ${data.foto ? 'checked' : ''}></td>`;
     html += `<td style="text-align:center"><input type="checkbox" name="reccans[]" ${data.reccans ? 'checked' : ''}></td>`;
-    html += `<td style="text-align:center"><button type="button" class="btn btn-sm btn-danger delete-row">Eliminar</button></td>`;
+    html += `<td style="text-align:center"><button type="button" class="btn btn-sm btn-danger delete-row icon-btn" title="Eliminar fila" aria-label="Eliminar fila">`;
+    html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6v14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6l1-2h4l1 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    html += `</button></td>`;
     tr.innerHTML = html;
     tbody.appendChild(tr);
 
