@@ -85,34 +85,7 @@ include('../app/controllers/despachos/listado_despachos.php');
                 </tr>
               </thead>
               <tbody>
-                <?php if (!empty($transacciones_datos)): ?>
-                  <?php foreach ($transacciones_datos as $r): ?>
-                    <tr>
-                      <td style="text-align:center;"><?php echo date('d/m/Y', strtotime($r['fecha_comprobante'])); ?></td>
-                      <td style="text-align:center;"><?php echo htmlspecialchars($r['name_tipocomprobante'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                      <td style="text-align:center;"><?php echo (int)($r['num_comprobante'] ?? 0); ?></td>
-                      <td><?php echo htmlspecialchars($r['name_persona'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                      <td><?php echo htmlspecialchars($r['descripcion'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                      <td style="text-align:right;"><?php echo number_format((float)($r['subTotal'] ?? 0), 2); ?></td>
-                      <td>
-                        <center>
-                          <div class="btn-group">
-                            <button type="button" class="imprimir btn btn-warning btn-sm mb-2 mb-md-0"
-                                    data-id-comprobante="<?php echo (int)$r['id_comprobante']; ?>" title="Imprimir">
-                              <i class="fa fa-print fa-sm"></i>
-                            </button>
-                            <a href="update.php?id=<?php echo (int)$r['id_comprobante']; ?>" class="btn btn-success btn-sm" title="Editar">
-                              <i class="fa fa-pencil-alt fa-sm"></i>
-                            </a>
-                            <a href="#" onclick="confirmDelete(<?php echo (int)$r['id_comprobante']; ?>);" class="btn btn-danger btn-sm" title="Eliminar">
-                              <i class="fa fa-trash fa-sm"></i>
-                            </a>
-                          </div>
-                        </center>
-                      </td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php endif; ?>
+                <!-- El contenido se carga por AJAX (server-side) -->
               </tbody>
             </table>
           </div>
@@ -148,6 +121,8 @@ include('../layout/mensajes.php');
 
   $(function () {
     var table = $("#example1").DataTable({
+      "processing": true,
+      "serverSide": true,
       "pageLength": 15,
       "order": [],
       language: {
@@ -161,7 +136,7 @@ include('../layout/mensajes.php');
         "lengthMenu": "Mostrar _MENU_ Despacho",
         "loadingRecords": "Cargando...",
         "processing": "Procesando...",
-        "search": "Buscador:",
+        "search": "Buscar en DB:",
         "zeroRecords": "Sin resultados encontrados",
         "paginate": {
           "first": "Primero",
@@ -173,6 +148,23 @@ include('../layout/mensajes.php');
       "responsive": true,
       "lengthChange": true,
       "autoWidth": false,
+      "ajax": {
+        "url": baseURL + '/app/controllers/despachos/listado_despachos_ajax.php',
+        "type": 'POST',
+        "data": function(d) {
+          d.desde = '<?php echo htmlspecialchars($desde, ENT_QUOTES, 'UTF-8'); ?>';
+          d.hasta = '<?php echo htmlspecialchars($hasta, ENT_QUOTES, 'UTF-8'); ?>';
+        }
+      },
+      "columns": [
+        { "data": "fecha" },
+        { "data": "tipo" },
+        { "data": "nro" },
+        { "data": "cliente" },
+        { "data": "descripcion" },
+        { "data": "monto", "className": "text-right" },
+        { "data": "acciones", "orderable": false, "searchable": false }
+      ],
       buttons: [
         {
           extend: 'collection',
