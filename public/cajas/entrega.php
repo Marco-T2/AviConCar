@@ -126,7 +126,7 @@ include('../layout/mensajes.php');
   .table-excel tbody td:nth-child(3) input { min-width:150px; }
   .table-excel tbody td:nth-child(4), .table-excel tbody td:nth-child(5), .table-excel tbody td:nth-child(6), .table-excel tbody td:nth-child(7), .table-excel tbody td:nth-child(8) { width:48px }
   .table-excel tbody td:nth-child(4) input, .table-excel tbody td:nth-child(5) input, .table-excel tbody td:nth-child(6) input, .table-excel tbody td:nth-child(7) input, .table-excel tbody td:nth-child(8) input { width:44px; text-align:right; }
-  .table-excel tbody td:nth-child(9) input { min-width:260px; }
+  .table-excel td.obs-cell .obs-input { min-width:260px; }
 
   /* special row styles */
   .row-ajuste { background: #fff3cd; }

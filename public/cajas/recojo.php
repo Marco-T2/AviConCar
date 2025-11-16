@@ -61,10 +61,10 @@ include('../layout/parte1.php');
                     <?php foreach($tipos_caja_safe as $t): ?>
                       <th><?php echo htmlspecialchars($t['raw']); ?></th>
                     <?php endforeach; ?>
-                    <th class="obs-cell">Observación</th>
                     <th>NotaD</th>
                     <th>Foto</th>
                     <th>RecCans</th>
+                    <th class="obs-cell">Observación</th>
                     <th>Acción</th>
                   </tr>
                 </thead>
@@ -77,7 +77,7 @@ include('../layout/parte1.php');
                     <?php foreach($tipos_caja_safe as $t): ?>
                       <td><input readonly class="total" id="total-<?php echo $t['code']; ?>" value="" placeholder="0"></td>
                     <?php endforeach; ?>
-                    <td colspan="5"></td>
+                    <td colspan="6"></td>
                   </tr>
                 </tfoot>
               </table>
@@ -138,8 +138,8 @@ include('../layout/mensajes.php');
   .table-excel tbody td:nth-child(6) input,
   .table-excel tbody td:nth-child(7) input { width:44px; text-align:right; font-size:12px; }
 
-  /* make observation field a bit wider */
-  .table-excel tbody td:nth-child(8) input { min-width:220px; }
+    /* observation uses obs-cell/obs-input so it's position-independent */
+  .table-excel td.obs-cell .obs-input { min-width:220px; }
 
   .btn-sm { padding:4px 6px; font-size:12px; }
   .icon-btn { width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; }
@@ -216,7 +216,7 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
 
     /* Cliente and Observación comfortable widths */
     .table-excel tbody td:nth-child(2) input { min-width:140px; }
-    .table-excel tbody td:nth-child(8) input { min-width:160px; }
+    .table-excel td.obs-cell .obs-input { min-width:160px; }
   }
   @media (max-width: 420px) {
     .table-excel { font-size:10.5px; }
@@ -246,10 +246,10 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
       const val = (data[code] !== undefined) ? data[code] : '';
       html += `<td><input type="number" min="0" name="qty[${code}][]" class="qty qty-${code}" placeholder="0" value="${val}"></td>`;
     });
-    html += `<td class="obs-cell"><input type="text" class="obs-input" name="obs[]" value="${escapeHtml(data.obs || '')}"></td>`;
     html += `<td style="text-align:center"><input type="checkbox" name="notad[]" ${data.notad ? 'checked' : ''}></td>`;
     html += `<td style="text-align:center"><input type="checkbox" name="foto[]" ${data.foto ? 'checked' : ''}></td>`;
     html += `<td style="text-align:center"><input type="checkbox" name="reccans[]" ${data.reccans ? 'checked' : ''}></td>`;
+    html += `<td class="obs-cell" style="text-align:left"><input type="text" class="obs-input" name="obs[]" value="${escapeHtml(data.obs || '')}"></td>`;
     html += `<td style="text-align:center"><button type="button" class="btn btn-sm btn-danger delete-row icon-btn" title="Eliminar fila" aria-label="Eliminar fila">`;
     html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6v14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6l1-2h4l1 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     html += `</button></td>`;
