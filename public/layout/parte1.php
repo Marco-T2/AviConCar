@@ -160,6 +160,16 @@ scratch. This page gets rid of all links and provides the needed markup only.
               </a>
             </li>
 
+            <!-- CAJAS -->
+            <li class="nav-item">
+              <a href="<?php echo $URL; ?>/cajas/" class="nav-link">
+                <i class="nav-icon fas fa-boxes"></i>
+                <p>
+                  CAJAS
+                </p>
+              </a>
+            </li>
+
             <li class="nav-item" hidden>
               <a href="#" class="nav-link">
                 <i class="nav-icon fa fa-window-maximize"></i>
