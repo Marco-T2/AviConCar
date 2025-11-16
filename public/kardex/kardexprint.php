@@ -142,45 +142,48 @@ $html = '
   <tr><td style="text-align:center;"><h4 style="margin: 0;">Transacciones</h4></td></tr>
 </table>
 
-<table border="1">
+<table cellpadding="6" cellspacing="0" width="100%" style="margin-top:6px; font-size:11px; border-collapse:collapse;">
   <thead>
-    <tr style="text-align:center; background-color:#c0c0c0; font-size: 14px;">
-      <th style="width:65px">Fecha</th>
-      <th style="width:105px">Doc</th>
-      <th style="width:40px">Nro</th>
-      <th style="width:250px">Detalle</th>
-      <th style="width:65px">Debe</th>
-      <th style="width:65px">Haber</th>
-      <th style="width:65px">Saldo</th>
+    <tr style="background-color:#f6f8fb; text-align:center; font-size:12px;">
+      <th style="width:65px; border:0.3px solid #bbb; padding:6px;"><b>Fecha</b></th>
+      <th style="width:105px; border:0.3px solid #bbb; padding:6px; text-align:left;"><b>Doc</b></th>
+      <th style="width:40px; border:0.3px solid #bbb; padding:6px; text-align:center;"><b>Nro</b></th>
+      <th style="width:250px; border:0.3px solid #bbb; padding:6px; text-align:left;"><b>Detalle</b></th>
+      <th style="width:65px; border:0.3px solid #bbb; padding:6px; text-align:right;"><b>Debe</b></th>
+      <th style="width:65px; border:0.3px solid #bbb; padding:6px; text-align:right;"><b>Haber</b></th>
+      <th style="width:65px; border:0.3px solid #bbb; padding:6px; text-align:right;"><b>Saldo</b></th>
     </tr>
   </thead>
   <tbody>';
 
 // Fila de saldo inicial (opcional, si quieres mostrarlo)
 $html .= '
-  <tr style="font-size:12px">
-    <td style="text-align:center;width:65px">' . $fechaInicioFormato . '</td>
-    <td style="text-align:left;width:105px">Saldo Inicial</td>
-    <td style="text-align:center;width:40px"></td>
-    <td style="width:250px">Saldo antes del rango</td>
-    <td style="text-align:right;width:65px">0.00</td>
-    <td style="text-align:right;width:65px">0.00</td>
-    <td style="text-align:right;width:65px">' . number_format($saldo_inicial, 2, '.', ',') . '</td>
+  <tr style="font-size:11px; background-color:#ffffff;">
+    <td style="text-align:center; width:65px; border:0.3px solid #bbb; padding:6px;">' . $fechaInicioFormato . '</td>
+    <td style="text-align:left; width:105px; border:0.3px solid #bbb; padding:6px;">Saldo Inicial</td>
+    <td style="text-align:center; width:40px; border:0.3px solid #bbb; padding:6px;"></td>
+    <td style="width:250px; border:0.3px solid #bbb; padding:6px;">Saldo antes del rango</td>
+    <td style="text-align:right; width:65px; border:0.3px solid #bbb; padding:6px;">0.00</td>
+    <td style="text-align:right; width:65px; border:0.3px solid #bbb; padding:6px;">0.00</td>
+    <td style="text-align:right; width:65px; border:0.3px solid #bbb; padding:6px;">' . number_format($saldo_inicial, 2, '.', ',') . '</td>
   </tr>';
 
 // Detalle
+$i = 0;
 foreach ($movs as $m) {
   $saldo += (float)$m['debe'] - (float)$m['haber'];
+  $rowBg = ($i % 2 === 0) ? 'background-color:#ffffff;' : 'background-color:#fbfcfe;';
   $html .= '
-    <tr style="font-size:12px">
-      <td style="text-align:center;width:65px">' . date('d/m/Y', strtotime($m['fecha_comprobante'])) . '</td>
-      <td style="text-align:left;width:105px">' . htmlspecialchars($m['name_tipocomprobante'] ?? '', ENT_QUOTES, 'UTF-8') . '</td>
-      <td style="text-align:center;width:40px">' . (int)$m['num_comprobante'] . '</td>
-      <td style="width:250px">' . htmlspecialchars($m['descripcion_final'] ?? '', ENT_QUOTES, 'UTF-8') . '</td>
-      <td style="text-align:right;width:65px">' . number_format((float)$m['debe'], 2, '.', ',') . '</td>
-      <td style="text-align:right;width:65px">' . number_format((float)$m['haber'], 2, '.', ',') . '</td>
-      <td style="text-align:right;width:65px">' . number_format($saldo, 2, '.', ',') . '</td>
+    <tr style="font-size:11px; ' . $rowBg . '">
+      <td style="text-align:center; width:65px; border:0.3px solid #bbb; padding:3px;">' . date('d/m/Y', strtotime($m['fecha_comprobante'])) . '</td>
+      <td style="text-align:left; width:105px; border:0.3px solid #bbb; padding:3px;">' . htmlspecialchars($m['name_tipocomprobante'] ?? '', ENT_QUOTES, 'UTF-8') . '</td>
+      <td style="text-align:center; width:40px; border:0.3px solid #bbb; padding:3px;">' . (int)$m['num_comprobante'] . '</td>
+      <td style="width:250px; border:0.3px solid #bbb; padding:3px;">' . htmlspecialchars($m['descripcion_final'] ?? '', ENT_QUOTES, 'UTF-8') . '</td>
+      <td style="text-align:right; width:65px; border:0.3px solid #bbb; padding:3px;">' . number_format((float)$m['debe'], 2, '.', ',') . '</td>
+      <td style="text-align:right; width:65px; border:0.3px solid #bbb; padding:3px;">' . number_format((float)$m['haber'], 2, '.', ',') . '</td>
+      <td style="text-align:right; width:65px; border:0.3px solid #bbb; padding:3px;">' . number_format($saldo, 2, '.', ',') . '</td>
     </tr>';
+  $i++;
 }
 
 $html .= '

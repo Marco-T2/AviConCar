@@ -3,19 +3,12 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../app/config.php';
-require_once __DIR__ . '/../app/TCPDF-main/tcpdf.php';
+require_once __DIR__ . '/../app/TCPDF-main/tcpdf.php';df.p
 
-$id = 0;
-// Aceptar tanto 'id' como 'id_comprobante' en la URL para compatibilidad
-if (isset($_GET['id']) && is_numeric($_GET['id'])) {
-  $id = (int) $_GET['id'];
-} elseif (isset($_GET['id_comprobante']) && is_numeric($_GET['id_comprobante'])) {
-  $id = (int) $_GET['id_comprobante'];
-}
-
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($id <= 0) {
   http_response_code(400);
-  exit('Falta o es inválido el id de comprobante. Asegúrate de llamar a print.php?id=123 o print.php?id_comprobante=123');
+  exit('Falta o es inválido el id de comprobante.');
 }
 
 /* ====== CABECERA DEL COMPROBANTE ====== */
