@@ -33,19 +33,35 @@ include('../layout/parte1.php');
               <div><button type="button" id="addRowBtn" class="btn btn-primary">+ Agregar fila</button></div>
             </div>
 
+            <?php
+            // obtener tipos de caja activos para mostrar columnas dinámicas
+            $tipos_caja = [];
+            try {
+              $stmt = $pdo->query("SELECT codigo, descripcion FROM tipo_caja WHERE activo=1 ORDER BY id ASC");
+              $tipos_caja = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+              $tipos_caja = [];
+            }
+            $tipos_caja_safe = [];
+            foreach ($tipos_caja as $t) {
+              $raw = $t['codigo'];
+              $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $raw);
+              $tipos_caja_safe[] = ['raw'=>$raw, 'code'=>$safe, 'label'=> ($t['descripcion'] ?: $raw) ];
+            }
+            ?>
+
             <div class="table-container">
               <table id="entrega-table" class="table-excel">
                 <thead>
                   <tr>
                     <th>Nro</th>
                     <th>NroDespacho</th>
-                    <th>Cliente</th>
-                    <th>NEG</th>
-                    <th>VER</th>
-                    <th>VER-OR</th>
-                    <th>AZU</th>
-                    <th>ROJ</th>
-                    <th>Observación</th>
+                    <th class="client-cell">Cliente</th>
+                    <?php foreach($tipos_caja_safe as $t): ?>
+                      <th><?php echo htmlspecialchars($t['raw']); ?></th>
+                    <?php endforeach; ?>
+                    <th class="obs-cell">Observación</th>
+                    <th>Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -54,12 +70,10 @@ include('../layout/parte1.php');
                 <tfoot>
                   <tr>
                     <td colspan="3" style="text-align:right;font-weight:bold">TOTAL</td>
-                    <td><input readonly class="total" id="total-neg" value="" placeholder="0"></td>
-                    <td><input readonly class="total" id="total-ver" value="" placeholder="0"></td>
-                    <td><input readonly class="total" id="total-veror" value="" placeholder="0"></td>
-                    <td><input readonly class="total" id="total-azu" value="" placeholder="0"></td>
-                    <td><input readonly class="total" id="total-roj" value="" placeholder="0"></td>
-                    <td></td>
+                    <?php foreach($tipos_caja_safe as $t): ?>
+                      <td><input readonly class="total" id="total-<?php echo $t['code']; ?>" value="" placeholder="0"></td>
+                    <?php endforeach; ?>
+                    <td colspan="2"></td>
                   </tr>
                 </tfoot>
               </table>
@@ -85,6 +99,23 @@ include('../layout/mensajes.php');
   .table-excel tbody td input[type="number"] { text-align:right; }
   .table-excel tbody td input:focus { outline: 1px solid #6ea8fe; }
   .table-excel tfoot input.total { width:100%; border:none; background:transparent; font-weight:bold; text-align:right; font-size:12px; }
+
+  /* consistent numeric input sizing for dynamic columns */
+  .table-excel .qty { width:44px; text-align:right; }
+  .table-excel th.nro-cell, .table-excel td.cell-nro { width:48px; max-width:48px; text-align:center; }
+  .btn-sm { padding:4px 6px; font-size:12px; }
+  .icon-btn { width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; }
+  .icon-btn svg { display:block; color:#fff; }
+  /* client column fixed, observation flexible */
+  .table-excel td.client-cell { width:180px; max-width:180px; }
+  .table-excel .cliente-input { width:100%; box-sizing:border-box; }
+  .table-excel td.obs-cell { width: auto; }
+  .table-excel .obs-input { width:100%; box-sizing:border-box; }
+
+  @media (max-width: 768px) {
+    .table-excel td.client-cell { width:140px; max-width:140px; }
+    .table-excel .obs-input { width:100%; }
+  }
 
   .btn { padding:6px 10px; border-radius:4px; border:1px solid #2f6f9f; background:#2f6f9f; color:#fff; cursor:pointer }
   .btn-primary { background:#007bff; border-color:#007bff }
@@ -135,6 +166,10 @@ include('../layout/mensajes.php');
 </datalist>
 
 <script>
+const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HEX_AMP); ?>;
+</script>
+
+<script>
 (() => {
   const tbody = document.querySelector('#entrega-table tbody');
   const addRowBtn = document.getElementById('addRowBtn');
@@ -153,22 +188,28 @@ include('../layout/mensajes.php');
 
   function createRow(data = {}, fixed = false){
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="cell-nro"></td>
-      <td><input type="text" name="nroDesp[]" value="${escapeHtml(data.nroDesp || '')}"></td>
-      <td><input list="clientes-list" type="text" name="cliente[]" class="cliente-input" value="${escapeHtml(data.cliente || '')}"></td>
-      <td><input type="number" min="0" name="neg[]" class="qty" placeholder="0" value="${data.neg || ''}"></td>
-      <td><input type="number" min="0" name="ver[]" class="qty" placeholder="0" value="${data.ver || ''}"></td>
-      <td><input type="number" min="0" name="veror[]" class="qty" placeholder="0" value="${data.veror || ''}"></td>
-      <td><input type="number" min="0" name="azu[]" class="qty" placeholder="0" value="${data.azu || ''}"></td>
-      <td><input type="number" min="0" name="roj[]" class="qty" placeholder="0" value="${data.roj || ''}"></td>
-      <td><input type="text" name="obs[]" value="${escapeHtml(data.obs || '')}"></td>
-    `;
+    let html = '';
+    html += `<td class="cell-nro"></td>`;
+    html += `<td><input type="text" name="nroDesp[]" value="${escapeHtml(data.nroDesp || '')}"></td>`;
+    html += `<td class="client-cell"><input list="clientes-list" type="text" name="cliente[]" class="cliente-input" value="${escapeHtml(data.cliente || '')}"></td>`;
+    // columnas por tipo
+    TIPOS_CAJA.forEach(t => {
+      const val = (data[t.code] !== undefined) ? data[t.code] : '';
+      html += `<td><input type="number" min="0" name="qty[${t.code}][]" class="qty qty-${t.code}" placeholder="0" value="${val}"></td>`;
+    });
+
+    html += `<td class="obs-cell"><input type="text" class="obs-input" name="obs[]" value="${escapeHtml(data.obs || '')}"></td>`;
+    // delete column: if fixed keep empty placeholder, else add delete button (icon)
+    if (fixed) html += `<td></td>`; else {
+      html += `<td style="text-align:center"><button type="button" class="btn btn-sm btn-danger delete-row icon-btn" title="Eliminar fila" aria-label="Eliminar fila">`;
+      html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 6v14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6l1-2h4l1 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      html += `</button></td>`;
+    }
 
     if (fixed) tr.classList.add('fixed-source');
 
-    // append at end (initial fixed rows are created first so they remain on top)
     tbody.appendChild(tr);
+    tr.innerHTML = html;
 
     // listeners
     tr.querySelectorAll('.qty').forEach(el => el.addEventListener('input', recalcTotals));
@@ -181,47 +222,39 @@ include('../layout/mensajes.php');
     clienteInput.addEventListener('input', checkAjuste);
     checkAjuste();
 
+    // delete handler (only exists on non-fixed rows)
+    const delBtn = tr.querySelector('.delete-row');
+    if (delBtn) delBtn.addEventListener('click', () => { tr.remove(); renumberRows(); recalcTotals(); });
+
     renumberRows();
   }
 
   function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
   function recalcTotals(){
-    const sourceTotals = { neg:0, ver:0, veror:0, azu:0, roj:0 };
-    const entregaTotals = { neg:0, ver:0, veror:0, azu:0, roj:0 };
+    const sourceTotals = {};
+    const entregaTotals = {};
+    TIPOS_CAJA.forEach(t => { sourceTotals[t.code] = 0; entregaTotals[t.code] = 0; });
 
     Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
       const isSource = tr.classList.contains('fixed-source');
-      const nneg = parseFloat(tr.querySelector('input[name="neg[]"]').value || 0) || 0;
-      const nver = parseFloat(tr.querySelector('input[name="ver[]"]').value || 0) || 0;
-      const nveror = parseFloat(tr.querySelector('input[name="veror[]"]').value || 0) || 0;
-      const nazu = parseFloat(tr.querySelector('input[name="azu[]"]').value || 0) || 0;
-      const nroj = parseFloat(tr.querySelector('input[name="roj[]"]').value || 0) || 0;
-      if (isSource) {
-        sourceTotals.neg += nneg; sourceTotals.ver += nver; sourceTotals.veror += nveror; sourceTotals.azu += nazu; sourceTotals.roj += nroj;
-      } else {
-        entregaTotals.neg += nneg; entregaTotals.ver += nver; entregaTotals.veror += nveror; entregaTotals.azu += nazu; entregaTotals.roj += nroj;
-      }
+      TIPOS_CAJA.forEach(t => {
+        const sel = tr.querySelector(`input[name="qty[${t.code}][]"]`);
+        const n = sel ? (parseFloat(sel.value || 0) || 0) : 0;
+        if (isSource) sourceTotals[t.code] += n; else entregaTotals[t.code] += n;
+      });
     });
 
-    // difference: source - entrega (should be zero when balanced)
-    const diff = {
-      neg: sourceTotals.neg - entregaTotals.neg,
-      ver: sourceTotals.ver - entregaTotals.ver,
-      veror: sourceTotals.veror - entregaTotals.veror,
-      azu: sourceTotals.azu - entregaTotals.azu,
-      roj: sourceTotals.roj - entregaTotals.roj
-    };
+    const diff = {};
+    TIPOS_CAJA.forEach(t => diff[t.code] = sourceTotals[t.code] - entregaTotals[t.code]);
 
-    document.getElementById('total-neg').value = diff.neg !== 0 ? diff.neg.toFixed(0) : '';
-    document.getElementById('total-ver').value = diff.ver !== 0 ? diff.ver.toFixed(0) : '';
-    document.getElementById('total-veror').value = diff.veror !== 0 ? diff.veror.toFixed(0) : '';
-    document.getElementById('total-azu').value = diff.azu !== 0 ? diff.azu.toFixed(0) : '';
-    document.getElementById('total-roj').value = diff.roj !== 0 ? diff.roj.toFixed(0) : '';
+    TIPOS_CAJA.forEach(t => {
+      const el = document.getElementById('total-' + t.code);
+      if (el) el.value = diff[t.code] !== 0 ? diff[t.code].toFixed(0) : '';
+    });
 
-    // visual cue when all diffs are zero
     const tfootRow = document.querySelector('#entrega-table tfoot tr');
-    const balanced = Object.values(diff).every(v => Math.abs(v) < 0.001);
+    const balanced = TIPOS_CAJA.every(t => Math.abs(diff[t.code]) < 0.001);
     if (balanced) tfootRow.classList.add('balanced'); else tfootRow.classList.remove('balanced');
   }
 
@@ -230,26 +263,23 @@ include('../layout/mensajes.php');
   if (addRowBtn) addRowBtn.addEventListener('click', () => { addEmptyRow(); window.scrollTo(0, document.body.scrollHeight); });
 
   // initial three special rows: DespachoMatadero, SaldoDeposito, Ajuste-Cajas
-  createRow({ cliente: 'DespachoMatadero', obs: '' }, true);
-  createRow({ cliente: 'SaldoDeposito', obs: '' }, true);
-  createRow({ cliente: 'Ajuste-Cajas', obs: '' }, true);
+  // provide empty values for each tipo so the inputs are created
+  function emptyTipoObj(){ const o = {}; TIPOS_CAJA.forEach(t => o[t.code] = ''); return o; }
+  createRow(Object.assign({ cliente: 'DespachoMatadero', obs: '' }, emptyTipoObj()), true);
+  createRow(Object.assign({ cliente: 'SaldoDeposito', obs: '' }, emptyTipoObj()), true);
+  createRow(Object.assign({ cliente: 'Ajuste-Cajas', obs: '' }, emptyTipoObj()), true);
   recalcTotals();
 
   form.addEventListener('submit', (ev)=>{
     ev.preventDefault();
     const data = { fecha: document.getElementById('f_fecha').value, chofer: document.getElementById('f_chofer').value, filas: [] };
     Array.from(tbody.querySelectorAll('tr')).forEach((tr, idx)=>{
-      data.filas.push({
-        nro: idx+1,
-        nroDesp: tr.querySelector('input[name="nroDesp[]"]').value,
-        cliente: tr.querySelector('input[name="cliente[]"]').value,
-        neg: parseInt(tr.querySelector('input[name="neg[]"]').value) || 0,
-        ver: parseInt(tr.querySelector('input[name="ver[]"]').value) || 0,
-        veror: parseInt(tr.querySelector('input[name="veror[]"]').value) || 0,
-        azu: parseInt(tr.querySelector('input[name="azu[]"]').value) || 0,
-        roj: parseInt(tr.querySelector('input[name="roj[]"]').value) || 0,
-        obs: tr.querySelector('input[name="obs[]"]').value
+      const fila = { nro: idx+1, nroDesp: tr.querySelector('input[name="nroDesp[]"]').value, cliente: tr.querySelector('input[name="cliente[]"]').value, obs: tr.querySelector('input[name="obs[]"]').value, cantidades: {} };
+      TIPOS_CAJA.forEach(t => {
+        const sel = tr.querySelector(`input[name="qty[${t.code}][]"]`);
+        fila.cantidades[t.code] = sel ? (parseInt(sel.value) || 0) : 0;
       });
+      data.filas.push(fila);
     });
     console.log('ENTREGA DE CAJAS form data:', data);
   });
