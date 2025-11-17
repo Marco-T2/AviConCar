@@ -148,6 +148,8 @@ include('../layout/mensajes.php');
 </style>
 
 <datalist id="clientes-list">
+  <option value="OtrosTraspasos"></option>
+  <option value="SaldoDeposito-DiaHoy"></option>
   <option value="Ajuste-Cajas"></option>
   <?php
   // cargar clientes desde la base de datos usando el listado existente
@@ -182,6 +184,7 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
 <style>
   /* highlight row when it's an Ajuste */
   .row-ajuste { background: #fff3cd; }
+  .row-diahoy { background: #e9d7ff; }
 </style>
 
 <style>
@@ -264,6 +267,7 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
     const checkAjuste = () => {
       const v = (clienteInput.value || '').trim();
       tr.classList.toggle('row-ajuste', v === 'Ajuste-Cajas');
+      tr.classList.toggle('row-diahoy', v === 'SaldoDeposito-DiaHoy');
     };
     clienteInput.addEventListener('input', checkAjuste);
     // run once for prefilled data
@@ -308,12 +312,80 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
   if (addRowBtn) addRowBtn.addEventListener('click', () => { addEmptyRow(); window.scrollTo(0, document.body.scrollHeight); });
 
   // inicializar 1 fila
-  createRow();
-  recalcTotals();
+  // if URL has movimiento id param, load that movement; else if fecha param, load movimientos for that fecha, otherwise create one empty row
+  const params = new URLSearchParams(window.location.search);
+  const movimientoId = params.get('id') || params.get('movimiento_id');
+  const cargaFecha = params.get('fecha');
+  if(movimientoId){
+    // load single movimiento
+    fetch('../app/controllers/cajas/get_movimiento.php?id='+encodeURIComponent(movimientoId)).then(r=>r.json()).then(resp=>{
+      tbody.innerHTML = '';
+      if(resp && resp.ok && resp.movimiento){
+        const mov = resp.movimiento;
+        document.getElementById('f_fecha').value = mov.fecha;
+        mov.filas.forEach(f => {
+          const data = {};
+          // try to parse cliente and obs from f.obs (we store cliente in obs sometimes)
+          let cliente = '';
+          let obsText = '';
+          if(f.obs){
+            // if obs starts with NroDesp: it's for entrega; for recojo may just be cliente - obs
+            const parts = f.obs.split(' - ');
+            // if first part contains 'NroDesp:' skip
+            if(parts[0].startsWith('NroDesp:')){
+              // remove NroDesp part
+              parts.shift();
+            }
+            if(parts.length>0){ cliente = parts[0]; parts.shift(); }
+            obsText = parts.join(' - ');
+          }
+          data.cliente = cliente || '';
+          data.obs = obsText || '';
+          data.notad = f.notad;
+          data.foto = f.foto;
+          data.reccans = f.reccans;
+          Object.keys(f.cantidades || {}).forEach(code => data[code] = f.cantidades[code]);
+          createRow(data);
+        });
+      }
+      if(tbody.querySelectorAll('tr').length === 0) createRow();
+      recalcTotals();
+    }).catch(err=>{ console.error(err); createRow(); recalcTotals(); });
+  } else if(cargaFecha){
+    document.getElementById('f_fecha').value = cargaFecha;
+    // fetch movimientos RECOJO for fecha
+    fetch('../app/controllers/cajas/get_movimientos_por_fecha.php?start='+encodeURIComponent(cargaFecha)+'&end='+encodeURIComponent(cargaFecha)+'&tipo=RECOJO')
+      .then(r=>r.json()).then(resp=>{
+        tbody.innerHTML = '';
+        if(resp && resp.ok){
+          const movs = resp.movimientos || [];
+          movs.forEach(mov => {
+            mov.filas.forEach(f => {
+              const data = {};
+              data.cliente = f.obs || '';
+              data.obs = '';
+              data.notad = f.notad;
+              data.foto = f.foto;
+              data.reccans = f.reccans;
+              // cantidades map: code => cantidad
+              Object.keys(f.cantidades || {}).forEach(code => data[code] = f.cantidades[code]);
+              createRow(data);
+            });
+          });
+        }
+        if(tbody.querySelectorAll('tr').length === 0) createRow();
+        recalcTotals();
+      }).catch(err=>{ console.error(err); createRow(); recalcTotals(); });
+  }else{
+    createRow();
+    recalcTotals();
+  }
 
-  // submit: recoger datos y enviar (ahora console.log)
+  // submit: recoger datos y enviar al controlador save_movimiento.php
   form.addEventListener('submit', (ev)=>{
     ev.preventDefault();
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
     const data = {
       fecha: document.getElementById('f_fecha').value,
       chofer: document.getElementById('f_chofer').value,
@@ -321,7 +393,7 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
       filas: []
     };
     Array.from(tbody.querySelectorAll('tr')).forEach((tr, idx)=>{
-      const fila = { nro: idx+1, cliente: tr.querySelector('input[name="cliente[]"]').value, obs: tr.querySelector('input[name="obs[]"]').value, notad: tr.querySelector('input[name="notad[]"]').checked, foto: tr.querySelector('input[name="foto[]"]').checked, reccans: tr.querySelector('input[name="reccans[]"]').checked, cantidades: {} };
+      const fila = { nro: idx+1, cliente: tr.querySelector('input[name="cliente[]"]').value, obs: tr.querySelector('input[name="obs[]"]').value, notad: tr.querySelector('input[name="notad[]"]').checked ? 1 : 0, foto: tr.querySelector('input[name="foto[]"]').checked ? 1 : 0, reccans: tr.querySelector('input[name="reccans[]"]').checked ? 1 : 0, cantidades: {} };
       TIPOS_CAJA.forEach(t => {
         const sel = tr.querySelector(`input[name="qty[${t.code}][]"]`);
         fila.cantidades[t.code] = sel ? (parseInt(sel.value) || 0) : 0;
@@ -329,15 +401,25 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
       data.filas.push(fila);
     });
 
-    console.log('RECOJO DE CAJAS form data:', data);
-
-    // Ejemplo de envío con fetch (API REST). Por ahora lo dejamos comentado.
-    /*
-    fetch('/api/cajas/recojo', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+    // enviar a controlador
+    fetch('../app/controllers/cajas/save_movimiento.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    }).then(r=>r.json()).then(resp=>console.log(resp)).catch(err=>console.error(err));
-    */
+    }).then(r => r.json()).then(resp => {
+      submitBtn.disabled = false;
+      if(resp && resp.ok){
+        alert('Movimiento guardado. ID: ' + resp.id);
+        // opcional: redirect a vista de detalle o limpiar formulario
+      }else{
+        console.error(resp);
+        alert('Error guardando movimiento: ' + (resp.error || 'unknown'));
+      }
+    }).catch(err => {
+      submitBtn.disabled = false;
+      console.error(err);
+      alert('Error de red al guardar movimiento');
+    });
   });
 
 })();

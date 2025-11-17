@@ -51,6 +51,22 @@ include('../layout/parte1.php');
             ?>
 
             <div class="table-container">
+              <div class="entrega-summary" style="margin-bottom:10px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+                <div style="flex:1;min-width:240px;border:1px solid #e3e3e3;padding:8px;border-radius:4px;background:#fbfbfd">
+                  <strong>CAJAS TOTALES PARA ENTREGAR</strong>
+                  <div id="para-entregar-list" style="margin-top:8px"></div>
+                  <div style="margin-top:8px;text-align:right"><strong>Total: <span id="para-entregar-total">0</span></strong></div>
+                </div>
+                <div style="flex:1;min-width:240px;border:1px solid #e3e3e3;padding:8px;border-radius:4px;background:#fbfbfd">
+                  <strong>CAJAS TOTALES ENTREGADOS</strong>
+                  <div id="entregados-list" style="margin-top:8px"></div>
+                  <div style="margin-top:8px;text-align:right"><strong>Total: <span id="entregados-total">0</span></strong></div>
+                </div>
+                <div style="width:160px;border:1px solid #e3e3e3;padding:8px;border-radius:4px;background:#fff;display:flex;flex-direction:column;justify-content:center;align-items:center">
+                  <strong>TOTAL GENERAL</strong>
+                  <div style="margin-top:8px;font-size:18px" id="total-general">0</div>
+                </div>
+              </div>
               <table id="entrega-table" class="table-excel">
                 <thead>
                   <tr>
@@ -131,6 +147,7 @@ include('../layout/mensajes.php');
   /* special row styles */
   .row-ajuste { background: #fff3cd; }
   .row-despacho { background: #cfe8ff; }
+  .row-diahoy { background: #e9d7ff; }
   .fixed-source td { font-weight:700; }
   tfoot tr.balanced { background: #e6ffed; }
 
@@ -151,9 +168,12 @@ include('../layout/mensajes.php');
 </style>
 
 <datalist id="clientes-list">
-  <option value="Ajuste-Cajas"></option>
+  <option value="OtrosTraspasos"></option>
   <option value="DespachoMatadero"></option>
   <option value="SaldoDeposito"></option>
+  <option value="SaldoDeposito-DiaAnt"></option>
+  <option value="SaldoDeposito-DiaHoy"></option>
+  <option value="Ajuste-Cajas"></option>
   <?php
   include_once('../app/controllers/personas/listado_personas.php');
   if (!empty($personas_datos)){
@@ -216,8 +236,12 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
     const clienteInput = tr.querySelector('.cliente-input');
     const checkAjuste = () => {
       const v = (clienteInput.value || '').trim();
+      // only Ajuste-Cajas uses the yellow ajuste style
       tr.classList.toggle('row-ajuste', v === 'Ajuste-Cajas');
-      tr.classList.toggle('row-despacho', v === 'DespachoMatadero' || v === 'SaldoDeposito');
+      // these are considered source/despacho rows (blue background) — SaldoDeposito-DiaHoy is visual-only
+      tr.classList.toggle('row-despacho', v === 'DespachoMatadero' || v === 'SaldoDeposito' || v === 'SaldoDeposito-DiaAnt' || v === 'OtrosTraspasos');
+      // SaldoDeposito-DiaHoy gets a visual lilac class but is NOT a source for validation
+      tr.classList.toggle('row-diahoy', v === 'SaldoDeposito-DiaHoy');
     };
     clienteInput.addEventListener('input', checkAjuste);
     checkAjuste();
@@ -232,12 +256,13 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
   function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
   function recalcTotals(){
+    // compute totals per tipo for sources (fixed-source rows) and entregas (other rows)
     const sourceTotals = {};
     const entregaTotals = {};
     TIPOS_CAJA.forEach(t => { sourceTotals[t.code] = 0; entregaTotals[t.code] = 0; });
 
     Array.from(tbody.querySelectorAll('tr')).forEach(tr => {
-      const isSource = tr.classList.contains('fixed-source');
+      const isSource = tr.classList.contains('fixed-source') || ['DespachoMatadero','SaldoDeposito','SaldoDeposito-DiaAnt','OtrosTraspasos'].includes((tr.querySelector('.cliente-input')||{value:''}).value);
       TIPOS_CAJA.forEach(t => {
         const sel = tr.querySelector(`input[name="qty[${t.code}][]"]`);
         const n = sel ? (parseFloat(sel.value || 0) || 0) : 0;
@@ -245,14 +270,44 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
       });
     });
 
+    // update footer with diff per tipo (sources - entregas)
     const diff = {};
-    TIPOS_CAJA.forEach(t => diff[t.code] = sourceTotals[t.code] - entregaTotals[t.code]);
-
+    let sourcesSum = 0, entregasSum = 0;
     TIPOS_CAJA.forEach(t => {
+      diff[t.code] = (sourceTotals[t.code] || 0) - (entregaTotals[t.code] || 0);
       const el = document.getElementById('total-' + t.code);
       if (el) el.value = diff[t.code] !== 0 ? diff[t.code].toFixed(0) : '';
+      sourcesSum += (sourceTotals[t.code] || 0);
+      entregasSum += (entregaTotals[t.code] || 0);
     });
 
+    // render summary lists
+    const paraList = document.getElementById('para-entregar-list');
+    const entregadosList = document.getElementById('entregados-list');
+    if(paraList && entregadosList){
+      paraList.innerHTML = '';
+      entregadosList.innerHTML = '';
+      TIPOS_CAJA.forEach(t => {
+        const s = sourceTotals[t.code] || 0;
+        const e = entregaTotals[t.code] || 0;
+        const rowS = document.createElement('div'); rowS.textContent = t.raw + ': ' + (s ? s : 0); paraList.appendChild(rowS);
+        const rowE = document.createElement('div'); rowE.textContent = t.raw + ': ' + (e ? e : 0); entregadosList.appendChild(rowE);
+      });
+    }
+
+    // totals
+    const elParaTotal = document.getElementById('para-entregar-total');
+    const elEntTotal = document.getElementById('entregados-total');
+    const elTotalGeneral = document.getElementById('total-general');
+    if(elParaTotal) elParaTotal.textContent = sourcesSum.toFixed(0);
+    if(elEntTotal) elEntTotal.textContent = entregasSum.toFixed(0);
+    if(elTotalGeneral) {
+      const tg = sourcesSum - entregasSum;
+      elTotalGeneral.textContent = tg.toFixed(0);
+      elTotalGeneral.style.color = (Math.abs(tg) < 0.001) ? 'green' : 'red';
+    }
+
+    // mark balanced styles on tfoot
     const tfootRow = document.querySelector('#entrega-table tfoot tr');
     const balanced = TIPOS_CAJA.every(t => Math.abs(diff[t.code]) < 0.001);
     if (balanced) tfootRow.classList.add('balanced'); else tfootRow.classList.remove('balanced');
@@ -262,26 +317,131 @@ const TIPOS_CAJA = <?php echo json_encode($tipos_caja_safe, JSON_HEX_TAG|JSON_HE
 
   if (addRowBtn) addRowBtn.addEventListener('click', () => { addEmptyRow(); window.scrollTo(0, document.body.scrollHeight); });
 
-  // initial three special rows: DespachoMatadero, SaldoDeposito, Ajuste-Cajas
+  // initial three special rows: DespachoMatadero, SaldoDeposito-DiaAnt, OtrosTraspasos
   // provide empty values for each tipo so the inputs are created
   function emptyTipoObj(){ const o = {}; TIPOS_CAJA.forEach(t => o[t.code] = ''); return o; }
-  createRow(Object.assign({ cliente: 'DespachoMatadero', obs: '' }, emptyTipoObj()), true);
-  createRow(Object.assign({ cliente: 'SaldoDeposito', obs: '' }, emptyTipoObj()), true);
-  createRow(Object.assign({ cliente: 'Ajuste-Cajas', obs: '' }, emptyTipoObj()), true);
-  recalcTotals();
+
+  // if URL has movimiento id param, load that movement; else if fecha param, load movimientos for that fecha and type ENTREGA
+  const params = new URLSearchParams(window.location.search);
+  const movimientoId = params.get('id') || params.get('movimiento_id');
+  const cargaFecha = params.get('fecha');
+  if(movimientoId){
+    fetch('../app/controllers/cajas/get_movimiento.php?id='+encodeURIComponent(movimientoId)).then(r=>r.json()).then(resp=>{
+      tbody.innerHTML = '';
+      if(resp && resp.ok && resp.movimiento){
+        const mov = resp.movimiento;
+        document.getElementById('f_fecha').value = mov.fecha;
+        mov.filas.forEach(f => {
+          const data = {};
+          // parse nroDesp from obs if present
+          let nroDespVal = '';
+          let clienteVal = '';
+          let obsVal = '';
+          if(f.obs){
+            const parts = f.obs.split(' - ');
+            if(parts[0].startsWith('NroDesp:')){ nroDespVal = parts[0].split(':')[1] || ''; parts.shift(); }
+            if(parts.length>0){ clienteVal = parts[0]; parts.shift(); }
+            obsVal = parts.join(' - ');
+          }
+          data.nroDesp = nroDespVal;
+          data.cliente = clienteVal;
+          data.obs = obsVal;
+          data.notad = f.notad;
+          data.foto = f.foto;
+          data.reccans = f.reccans;
+          Object.keys(f.cantidades || {}).forEach(code => data[code] = f.cantidades[code]);
+          createRow(data, false);
+        });
+      }
+      if(tbody.querySelectorAll('tr').length === 0){
+        createRow(Object.assign({ cliente: 'DespachoMatadero', obs: '' }, emptyTipoObj()), true);
+        createRow(Object.assign({ cliente: 'SaldoDeposito-DiaAnt', obs: '' }, emptyTipoObj()), true);
+        createRow(Object.assign({ cliente: 'OtrosTraspasos', obs: '' }, emptyTipoObj()), true);
+      }
+      recalcTotals();
+    }).catch(err=>{ console.error(err); /* fallback to defaults below */
+      createRow(Object.assign({ cliente: 'DespachoMatadero', obs: '' }, emptyTipoObj()), true);
+      createRow(Object.assign({ cliente: 'SaldoDeposito-DiaAnt', obs: '' }, emptyTipoObj()), true);
+      createRow(Object.assign({ cliente: 'OtrosTraspasos', obs: '' }, emptyTipoObj()), true);
+      recalcTotals();
+    });
+  } else if(cargaFecha){
+    document.getElementById('f_fecha').value = cargaFecha;
+    // fetch movimientos ENTREGA
+    fetch('../app/controllers/cajas/get_movimientos_por_fecha.php?start='+encodeURIComponent(cargaFecha)+'&end='+encodeURIComponent(cargaFecha)+'&tipo=ENTREGA')
+      .then(r=>r.json()).then(resp=>{
+        tbody.innerHTML = '';
+        if(resp && resp.ok){
+          const movs = resp.movimientos || [];
+          movs.forEach(mov => {
+            mov.filas.forEach(f => {
+              const data = {};
+              data.nroDesp = '';
+              data.cliente = f.obs || '';
+              data.obs = '';
+              data.notad = f.notad;
+              data.foto = f.foto;
+              data.reccans = f.reccans;
+              Object.keys(f.cantidades || {}).forEach(code => data[code] = f.cantidades[code]);
+              createRow(data, false);
+            });
+          });
+        }
+        if(tbody.querySelectorAll('tr').length === 0){
+          createRow(Object.assign({ cliente: 'DespachoMatadero', obs: '' }, emptyTipoObj()), true);
+          createRow(Object.assign({ cliente: 'SaldoDeposito-DiaAnt', obs: '' }, emptyTipoObj()), true);
+          createRow(Object.assign({ cliente: 'OtrosTraspasos', obs: '' }, emptyTipoObj()), true);
+        }
+        recalcTotals();
+      }).catch(err=>{
+        console.error(err);
+          createRow(Object.assign({ cliente: 'DespachoMatadero', obs: '' }, emptyTipoObj()), true);
+          createRow(Object.assign({ cliente: 'SaldoDeposito-DiaAnt', obs: '' }, emptyTipoObj()), true);
+          createRow(Object.assign({ cliente: 'OtrosTraspasos', obs: '' }, emptyTipoObj()), true);
+        recalcTotals();
+      });
+  }else{
+    createRow(Object.assign({ cliente: 'DespachoMatadero', obs: '' }, emptyTipoObj()), true);
+    createRow(Object.assign({ cliente: 'SaldoDeposito-DiaAnt', obs: '' }, emptyTipoObj()), true);
+    createRow(Object.assign({ cliente: 'OtrosTraspasos', obs: '' }, emptyTipoObj()), true);
+    recalcTotals();
+  }
 
   form.addEventListener('submit', (ev)=>{
     ev.preventDefault();
-    const data = { fecha: document.getElementById('f_fecha').value, chofer: document.getElementById('f_chofer').value, filas: [] };
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if(submitBtn) submitBtn.disabled = true;
+    const data = { fecha: document.getElementById('f_fecha').value, chofer: document.getElementById('f_chofer').value, tipo: 'ENTREGA', filas: [] };
     Array.from(tbody.querySelectorAll('tr')).forEach((tr, idx)=>{
-      const fila = { nro: idx+1, nroDesp: tr.querySelector('input[name="nroDesp[]"]').value, cliente: tr.querySelector('input[name="cliente[]"]').value, obs: tr.querySelector('input[name="obs[]"]').value, cantidades: {} };
+      const fila = { nro: idx+1, nroDesp: tr.querySelector('input[name="nroDesp[]"]').value, cliente: tr.querySelector('input[name="cliente[]"]').value, obs: tr.querySelector('input[name="obs[]"]') .value, cantidades: {} };
       TIPOS_CAJA.forEach(t => {
         const sel = tr.querySelector(`input[name="qty[${t.code}][]"]`);
         fila.cantidades[t.code] = sel ? (parseInt(sel.value) || 0) : 0;
       });
       data.filas.push(fila);
     });
-    console.log('ENTREGA DE CAJAS form data:', data);
+
+    // if cargaFecha is present we want to replace existing registros for that fecha
+    if(cargaFecha) data.replace_fecha = true;
+
+    // if we loaded a movimiento by id, include it so the backend updates instead of creating a new one
+    if(movimientoId) data.id = movimientoId;
+
+    fetch('../app/controllers/cajas/save_movimiento.php', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+    }).then(r=>r.json()).then(resp=>{
+      if(submitBtn) submitBtn.disabled = false;
+      if(resp && resp.ok){
+        alert('Movimiento guardado. ID: ' + resp.id);
+      }else{
+        console.error(resp);
+        alert('Error guardando movimiento: ' + (resp.error || 'unknown'));
+      }
+    }).catch(err=>{
+      if(submitBtn) submitBtn.disabled = false;
+      console.error(err);
+      alert('Error de red al guardar movimiento');
+    });
   });
 
 })();
