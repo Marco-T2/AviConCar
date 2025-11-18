@@ -36,11 +36,11 @@ if (!function_exists('h')) {
                 <thead>
                   <tr>
                     <th style="width:2%;"><i class="fa fa-list-ol" aria-hidden="true"></i></th>
-                    <th style="width:10%;">Nombre</th>
-                    <th style="width:5%;">Tipo persona</th>
-                    <th style="width:10%;">Direccion</th>
-                    <th style="width:4%;">Celular</th>
-                    <th style="width:8%;">Descripcion</th>
+                    <th style="width:22%">Nombre</th>
+                    <th style="width:18%">Tipos</th>
+                    <th style="width:16%">Tags</th>
+                    <th style="width:16%">Direccion</th>
+                    <th style="width:8%">Celular</th>
                     <th style="width:2%;text-align:center;vertical-align:middle;"><i class="fa fa-filter" aria-hidden="true"></i></th>
                   </tr>
                 </thead>
@@ -52,11 +52,31 @@ if (!function_exists('h')) {
                 ?>
                   <tr>
                     <td><?= ++$contador ?></td>
-                    <td><?= h($p['name_persona']) ?></td>
-                    <td><?= h($p['name_tipoPersona']) ?></td>
+                    <td>
+                      <div style="font-weight:700"><?= h($p['name_persona']) ?></div>
+                      <div style="font-size:.85rem;color:#666"><?= h($p['descripcion']) ?></div>
+                    </td>
+                    <td>
+                      <?php
+                        $primary = $p['name_tipoPersona'] ?? null;
+                        $extra = $p['tipos_extra'] ?? null;
+                        if($primary) echo '<span class="badge badge-primary mr-1">'.h($primary).'</span>';
+                        if($extra) {
+                          foreach(array_filter(array_map('trim', explode(',', $extra))) as $ex){ echo '<span class="badge badge-secondary mr-1">'.h($ex).'</span>'; }
+                        }
+                      ?>
+                    </td>
+                    <td>
+                      <?php
+                        $tags = $p['tags'] ?? '';
+                        if($tags){
+                          foreach(array_filter(array_map('trim', explode(',', $tags))) as $tg){ echo '<span class="badge badge-info mr-1">'.h($tg).'</span>'; }
+                        }
+                      ?>
+                      <!-- tags shown above; checkbox removed (use tipos for 'cajas') -->
+                    </td>
                     <td><?= h($p['direccion']) ?></td>
                     <td><?= h($p['celular']) ?></td>
-                    <td><?= h($p['descripcion']) ?></td>
                     <td class="text-center">
                       <div class="btn-group">
                         <!-- Editar (sin modal) -->
@@ -119,11 +139,13 @@ document.addEventListener('click', function(e){
 });
 </script>
 
+<!-- tag checkbox removed: tags are editable in persona edit form -->
+
 <!-- DataTables -->
 <script>
 $(document).ready(function() {
   var table = $('#example1').DataTable({
-    pageLength: 5,
+    pageLength: 10,
     language: {
       emptyTable: "No hay información",
       info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",

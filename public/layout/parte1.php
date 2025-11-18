@@ -178,14 +178,29 @@ scratch. This page gets rid of all links and provides the needed markup only.
               </a>
             </li>
 
-            <!-- CAJAS -->
-            <li class="nav-item">
-              <a href="<?php echo $URL; ?>/cajas/" class="nav-link">
+            <!-- CAJAS (submenu) -->
+            <li class="nav-item has-treeview">
+              <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-boxes"></i>
                 <p>
                   CAJAS
+                  <i class="right fas fa-angle-left"></i>
                 </p>
               </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="<?php echo $URL; ?>/cajas/kardexCajas.php" class="nav-link">
+                    <i class="nav-icon fas fa-address-book"></i>
+                    <p>Kardex Cajas Clientes</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="<?php echo $URL; ?>/cajas/" class="nav-link">
+                    <i class="nav-icon fas fa-box"></i>
+                    <p>Registro de cajas</p>
+                  </a>
+                </li>
+              </ul>
             </li>
 
             <li class="nav-item" hidden>

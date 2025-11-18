@@ -30,9 +30,8 @@ include('../app/controllers/tipopersonas/listado_tipopersonas.php');
                                             <input type="text" name="name_persona" class="form-control" placeholder="Nombre completo" required>
                                         </div>
                                         <div class="form-group">
-                                            <label for="">Tipo persona</label>
-                                            <select id="id_tipoPersona" class="class form-control" name="id_tipoPersona">
-                                                <option value="" disabled selected>Seleccionar cuenta</option>
+                                            <label for="">Tipo persona (puedes seleccionar varios)</label>
+                                            <select id="id_tipoPersona" class="class form-control" name="id_tipoPersona[]" multiple size="6">
                                                 <?php
                                                 foreach ($tipopersonas_datos as $tipopersonas_dato) {
                                                 ?>
@@ -41,6 +40,13 @@ include('../app/controllers/tipopersonas/listado_tipopersonas.php');
                                                 }
                                                 ?>
                                             </select>
+                                            <small class="form-text text-muted">Mantener presionada la tecla Ctrl / Cmd para seleccionar múltiples.</small>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="">Tags (separados por coma)</label>
+                                            <input type="text" name="tags" class="form-control" placeholder="p.ej. cajas, empleado, fletero">
+                                            <small class="form-text text-muted">Los tags permiten filtrar en informes (ej. 'cajas').</small>
                                         </div>
                                         <div class="form-group">
                                             <label for="">Direccion</label>
