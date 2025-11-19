@@ -36,7 +36,7 @@ if ($sentencia->execute()) {
         $persona_id = $pdo->lastInsertId();
         // sync persona tipos (pivot)
         if(!empty($selected_tipos)){
-            $ins = $pdo->prepare("INSERT IGNORE INTO tb_persona_tipos (persona_id, id_tipoPersona, created_at) VALUES (?, ?, NOW())");
+            $ins = $pdo->prepare("INSERT IGNORE INTO tb_persona_tipos (id_persona, id_tipoPersona, created_at) VALUES (?, ?, NOW())");
             foreach($selected_tipos as $tid){ $ins->execute([$persona_id, $tid]); }
         }
         // handle tags (comma separated)
@@ -44,7 +44,7 @@ if ($sentencia->execute()) {
             $tags = array_filter(array_map('trim', explode(',', $tags_raw)));
             $selTag = $pdo->prepare("SELECT id FROM tb_tags WHERE tag = ? LIMIT 1");
             $insTag = $pdo->prepare("INSERT INTO tb_tags (tag, descripcion, created_at) VALUES (?, ?, NOW())");
-            $insPersonaTag = $pdo->prepare("INSERT IGNORE INTO tb_persona_tags (persona_id, tag_id, created_at) VALUES (?, ?, NOW())");
+            $insPersonaTag = $pdo->prepare("INSERT IGNORE INTO tb_persona_tags (id_persona, tag_id, created_at) VALUES (?, ?, NOW())");
             foreach($tags as $t){
                 if($t === '') continue;
                 $selTag->execute([$t]);

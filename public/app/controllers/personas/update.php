@@ -39,21 +39,21 @@ if ($sentencia->execute()) {
     $_SESSION['mensaje'] = 'Se actualizo la informacion de la persona';
     $_SESSION['icono'] = 'success';
         // sync tb_persona_tipos: remove existing and insert new selections
-        $del = $pdo->prepare("DELETE FROM tb_persona_tipos WHERE persona_id = ?");
+        $del = $pdo->prepare("DELETE FROM tb_persona_tipos WHERE id_persona = ?");
         $del->execute([$id_persona]);
         if(!empty($selected_tipos)){
-            $ins = $pdo->prepare("INSERT IGNORE INTO tb_persona_tipos (persona_id, id_tipoPersona, created_at) VALUES (?, ?, NOW())");
+            $ins = $pdo->prepare("INSERT IGNORE INTO tb_persona_tipos (id_persona, id_tipoPersona, created_at) VALUES (?, ?, NOW())");
             foreach($selected_tipos as $tid){ $ins->execute([$id_persona, $tid]); }
         }
         // sync tags
         // delete existing
-        $delTags = $pdo->prepare("DELETE FROM tb_persona_tags WHERE persona_id = ?");
+        $delTags = $pdo->prepare("DELETE FROM tb_persona_tags WHERE id_persona = ?");
         $delTags->execute([$id_persona]);
         if(!empty($tags_raw)){
             $tags = array_filter(array_map('trim', explode(',', $tags_raw)));
             $selTag = $pdo->prepare("SELECT id FROM tb_tags WHERE tag = ? LIMIT 1");
             $insTag = $pdo->prepare("INSERT INTO tb_tags (tag, descripcion, created_at) VALUES (?, ?, NOW())");
-            $insPersonaTag = $pdo->prepare("INSERT IGNORE INTO tb_persona_tags (persona_id, tag_id, created_at) VALUES (?, ?, NOW())");
+            $insPersonaTag = $pdo->prepare("INSERT IGNORE INTO tb_persona_tags (id_persona, tag_id, created_at) VALUES (?, ?, NOW())");
             foreach($tags as $t){
                 if($t === '') continue;
                 $selTag->execute([$t]);

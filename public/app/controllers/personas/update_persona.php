@@ -41,13 +41,13 @@ try {
         $descripcion = $personas_dato['descripcion'];
                 // fetch existing tipos (pivot)
                 try{
-                    $stt = $pdo->prepare("SELECT id_tipoPersona FROM tb_persona_tipos WHERE persona_id = ?");
+                    $stt = $pdo->prepare("SELECT id_tipoPersona FROM tb_persona_tipos WHERE id_persona = ?");
                     $stt->execute([$id_persona]);
                     $existing_tipo_ids = array_column($stt->fetchAll(PDO::FETCH_ASSOC), 'id_tipoPersona');
                 }catch(Exception $e){ $existing_tipo_ids = []; }
                 // fetch existing tags
                 try{
-                    $stt2 = $pdo->prepare("SELECT tg.tag FROM tb_persona_tags pt JOIN tb_tags tg ON tg.id = pt.tag_id WHERE pt.persona_id = ?");
+                    $stt2 = $pdo->prepare("SELECT tg.tag FROM tb_persona_tags pt JOIN tb_tags tg ON tg.id = pt.tag_id WHERE pt.id_persona = ?");
                     $stt2->execute([$id_persona]);
                     $existing_tags = implode(', ', array_column($stt2->fetchAll(PDO::FETCH_ASSOC), 'tag'));
                 }catch(Exception $e){ $existing_tags = ''; }

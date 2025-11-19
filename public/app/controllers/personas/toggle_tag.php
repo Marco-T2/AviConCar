@@ -15,13 +15,13 @@ try{
   if($r) $tag_id = (int)$r['id']; else { $ins = $pdo->prepare("INSERT INTO tb_tags (tag, descripcion, created_at) VALUES (?, ?, NOW())"); $ins->execute([$tag, null]); $tag_id = (int)$pdo->lastInsertId(); }
 
   if($action === 'on' || ($action==='toggle' && !empty($_POST['state']) && $_POST['state']=='1')){
-    $ins2 = $pdo->prepare("INSERT IGNORE INTO tb_persona_tags (persona_id, tag_id, created_at) VALUES (?, ?, NOW())");
+    $ins2 = $pdo->prepare("INSERT IGNORE INTO tb_persona_tags (id_persona, tag_id, created_at) VALUES (?, ?, NOW())");
     $ins2->execute([$persona, $tag_id]);
     echo json_encode(['ok'=>true,'action'=>'on']);
     exit;
   }
   // remove
-  $del = $pdo->prepare("DELETE FROM tb_persona_tags WHERE persona_id = ? AND tag_id = ?");
+  $del = $pdo->prepare("DELETE FROM tb_persona_tags WHERE id_persona = ? AND tag_id = ?");
   $del->execute([$persona, $tag_id]);
   echo json_encode(['ok'=>true,'action'=>'off']);
   exit;

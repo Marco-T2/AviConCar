@@ -28,6 +28,9 @@ if (!function_exists('h')) {
                 <a href="create.php" class="btn btn-primary btn-sm">
                   <i class="fa fa-plus"></i> Nueva persona
                 </a>
+                <button id="bulk-delete-btn" class="btn btn-danger btn-sm" style="margin-left:8px;">
+                  <i class="fa fa-trash"></i> Eliminar seleccionados
+                </button>
               </div>
             </div>
 
@@ -35,13 +38,13 @@ if (!function_exists('h')) {
               <table id="example1" class="table table-bordered table-striped table-sm" style="font-size:0.85rem;vertical-align:middle;">
                 <thead>
                   <tr>
-                    <th style="width:2%;"><i class="fa fa-list-ol" aria-hidden="true"></i></th>
-                    <th style="width:22%">Nombre</th>
+                    <th style="width:3%;text-align:center"><input type="checkbox" id="select-all" style="margin:0"></th>
+                    <th style="width:4%">#</th>
+                    <th style="width:28%">Nombre</th>
                     <th style="width:18%">Tipos</th>
                     <th style="width:16%">Tags</th>
-                    <th style="width:16%">Direccion</th>
-                    <th style="width:8%">Celular</th>
-                    <th style="width:2%;text-align:center;vertical-align:middle;"><i class="fa fa-filter" aria-hidden="true"></i></th>
+                    <th style="width:20%">Informacion</th>
+                    <th style="width:3%;text-align:center;vertical-align:middle;"><i class="fa fa-filter" aria-hidden="true"></i></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -51,9 +54,14 @@ if (!function_exists('h')) {
                   $id_persona = (int)$p['id_persona'];
                 ?>
                   <tr>
+                    <td class="text-center"><input type="checkbox" class="row-select" name="ids[]" value="<?= $id_persona ?>" style="margin:0"></td>
                     <td><?= ++$contador ?></td>
                     <td>
-                      <div style="font-weight:700"><?= h($p['name_persona']) ?></div>
+                      <?php $hasMov = isset($p['trans_count']) && (int)$p['trans_count'] > 0; ?>
+                      <div style="font-weight:700;color:<?= $hasMov ? '#28a745' : '#6c757d' ?>;display:flex;align-items:center;">
+                        <span><?= h($p['name_persona']) ?></span>
+                        <small style="margin-left:8px;font-size:0.8rem;color:inherit;">(<?= $hasMov ? 'Movimientos' : 'Sin movimientos' ?>)</small>
+                      </div>
                       <div style="font-size:.85rem;color:#666"><?= h($p['descripcion']) ?></div>
                     </td>
                     <td>
@@ -75,8 +83,10 @@ if (!function_exists('h')) {
                       ?>
                       <!-- tags shown above; checkbox removed (use tipos for 'cajas') -->
                     </td>
-                    <td><?= h($p['direccion']) ?></td>
-                    <td><?= h($p['celular']) ?></td>
+                    <td>
+                      <div><?= h($p['direccion']) ?></div>
+                      <div style="font-size:.85rem;color:#666"><?= h($p['celular']) ?></div>
+                    </td>
                     <td class="text-center">
                       <div class="btn-group">
                         <!-- Editar (sin modal) -->
@@ -84,8 +94,8 @@ if (!function_exists('h')) {
                           <i class="fa fa-pencil-alt"></i>
                         </a>
 
-                        <!-- Eliminar por POST seguro (CSRF) -->
-                        <form action="<?= $URL ?>app/controllers/personas/delete.php" method="post" class="d-inline">
+                        <!-- Eliminar individual -->
+                        <form action="../app/controllers/personas/delete.php" method="post" class="d-inline">
                           <input type="hidden" name="id" value="<?= $id_persona ?>">
                           <input type="hidden" name="csrf" value="<?= $_SESSION['csrf'] ?>">
                           <button type="submit" class="btn btn-danger btn-sm btn-del"
@@ -139,6 +149,34 @@ document.addEventListener('click', function(e){
 });
 </script>
 
+<!-- Bulk delete handler -->
+<form id="bulk-delete-form" action="../app/controllers/personas/delete_multiple.php" method="post" style="display:none;">
+  <input type="hidden" name="csrf" value="<?= $_SESSION['csrf'] ?>">
+</form>
+<script>
+document.getElementById('select-all').addEventListener('change', function(){
+  const checked = this.checked;
+  document.querySelectorAll('.row-select').forEach(cb => cb.checked = checked);
+});
+
+document.getElementById('bulk-delete-btn').addEventListener('click', function(e){
+  e.preventDefault();
+  const selected = Array.from(document.querySelectorAll('.row-select:checked')).map(cb => cb.value);
+  if (selected.length === 0) { alert('Selecciona al menos una persona.'); return; }
+  const confirmDelete = (typeof Swal !== 'undefined') ? Swal.fire({
+    title: 'Eliminar seleccionados?', text: `Vas a eliminar ${selected.length} personas.`, icon:'warning', showCancelButton:true, confirmButtonText:'Sí, borrar'
+  }).then(r => r.isConfirmed) : Promise.resolve(confirm(`Vas a eliminar ${selected.length} personas. Continuar?`));
+  Promise.resolve(confirmDelete).then(ok => { if (!ok) return; 
+    const form = document.getElementById('bulk-delete-form');
+    // append ids
+    selected.forEach(id => {
+      const inp = document.createElement('input'); inp.type='hidden'; inp.name='ids[]'; inp.value=id; form.appendChild(inp);
+    });
+    form.submit();
+  });
+});
+</script>
+
 <!-- tag checkbox removed: tags are editable in persona edit form -->
 
 <!-- DataTables -->
@@ -162,7 +200,7 @@ $(document).ready(function() {
     lengthChange: true,
     autoWidth: false,
     columnDefs: [
-      { targets:[1], searchable:true },   // Nombre
+      { targets:[2], searchable:true },   // Nombre
       { targets:"_all", searchable:false }
     ]
   });
