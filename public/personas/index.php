@@ -35,16 +35,24 @@ if (!function_exists('h')) {
             </div>
 
             <div class="card-body" style="display:block;">
+              <?php
+                // Sumar todos los registros asociados para mostrar en el encabezado
+                $grandTotal = 0;
+                if (!empty($personas_datos) && is_array($personas_datos)){
+                  foreach ($personas_datos as $pp) { $grandTotal += (int)($pp['total_assoc'] ?? 0); }
+                }
+              ?>
               <table id="example1" class="table table-bordered table-striped table-sm" style="font-size:0.85rem;vertical-align:middle;">
                 <thead>
                   <tr>
                     <th style="width:3%;text-align:center"><input type="checkbox" id="select-all" style="margin:0"></th>
                     <th style="width:4%">#</th>
-                    <th style="width:28%">Nombre</th>
-                    <th style="width:18%">Tipos</th>
-                    <th style="width:16%">Tags</th>
-                    <th style="width:20%">Informacion</th>
-                    <th style="width:3%;text-align:center;vertical-align:middle;"><i class="fa fa-filter" aria-hidden="true"></i></th>
+                    <th style="width:26%">Nombre</th>
+                    <th style="width:12%">Tipos</th>
+                    <th style="width:12%">Tags</th>
+                    <th style="width:20%">Información</th>
+                    <th style="width:12%;text-align:center">Cantidad de registros asociados<br><small class="text-muted">Total: <?= $grandTotal ?></small></th>
+                    <th style="width:11%;text-align:center;vertical-align:middle;"><i class="fa fa-filter" aria-hidden="true"></i></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -57,10 +65,10 @@ if (!function_exists('h')) {
                     <td class="text-center"><input type="checkbox" class="row-select" name="ids[]" value="<?= $id_persona ?>" style="margin:0"></td>
                     <td><?= ++$contador ?></td>
                     <td>
-                      <?php $hasMov = isset($p['trans_count']) && (int)$p['trans_count'] > 0; ?>
+                      <?php $hasMov = isset($p['total_assoc']) && (int)$p['total_assoc'] > 1; ?>
                       <div style="font-weight:700;color:<?= $hasMov ? '#28a745' : '#6c757d' ?>;display:flex;align-items:center;">
                         <span><?= h($p['name_persona']) ?></span>
-                        <small style="margin-left:8px;font-size:0.8rem;color:inherit;">(<?= $hasMov ? 'Movimientos' : 'Sin movimientos' ?>)</small>
+                        <small style="margin-left:8px;font-size:0.8rem;color:inherit;">(<?= $hasMov ? 'Con movimiento' : 'Sin movimiento' ?>)</small>
                       </div>
                       <div style="font-size:.85rem;color:#666"><?= h($p['descripcion']) ?></div>
                     </td>
@@ -86,6 +94,14 @@ if (!function_exists('h')) {
                     <td>
                       <div><?= h($p['direccion']) ?></div>
                       <div style="font-size:.85rem;color:#666"><?= h($p['celular']) ?></div>
+                    </td>
+                    <td class="text-center" style="vertical-align:middle;font-size:0.85rem;color:#333">
+                      <?php $totalAssoc = isset($p['total_assoc']) ? (int)$p['total_assoc'] : 0; ?>
+                      <?php if ($totalAssoc > 0): ?>
+                        <div>Cantidad de registros asociados <strong><?= $totalAssoc ?></strong></div>
+                      <?php else: ?>
+                        <span class="text-muted">Sin movimientos</span>
+                      <?php endif; ?>
                     </td>
                     <td class="text-center">
                       <div class="btn-group">
